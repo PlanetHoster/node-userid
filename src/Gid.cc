@@ -8,7 +8,7 @@
 #else
 // Mocks for Windows
 
-using gid_t = uint32_t;
+typedef uint32_t gid_t;
 struct group {
   /**
    * group name
@@ -34,17 +34,16 @@ struct group {
  * local group file /etc/group, NIS, and LDAP) that matches the group
  * name name.
  */
-auto getgrnam(const char *name) -> struct group *;
+struct group *getgrnam(const char *name) {
+  return nullptr;
+}
 #endif
 
-using Napi::CallbackInfo;
-using Napi::Error;
-using Napi::Number;
-using Napi::String;
-using Napi::TypeError;
+using namespace Napi;
+using namespace userid;
 
-auto userid::Gid(const CallbackInfo &info) -> Number {
-  const auto env = info.Env();
+Number userid::Gid(const CallbackInfo &info) {
+  auto env = info.Env();
 
   if (info.Length() < 1) {
     throw TypeError::New(env, "Wrong number of arguments");
@@ -54,11 +53,11 @@ auto userid::Gid(const CallbackInfo &info) -> Number {
     throw TypeError::New(env, "Argument must be a string");
   }
 
-  const auto name = std::string(info[0].As<String>());
+  auto name = std::string(info[0].As<String>());
 
-  const auto *const group = getgrnam(name.c_str());
+  auto group = getgrnam(name.c_str());
 
-  if (group == nullptr) {
+  if (!group) {
     throw Error::New(env, "groupname not found");
   }
 

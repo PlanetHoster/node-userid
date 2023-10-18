@@ -3,16 +3,15 @@
 
 #include "userid.hh"
 
-using Napi::Env;
-using Napi::Function;
-using Napi::Object;
+using namespace Napi;
+using namespace userid;
 
-auto Init(Env env, Object exports) -> Object {
-  exports["ids"] = Function::New(env, &userid::Ids);
-  exports["gid"] = Function::New(env, &userid::Gid);
-  exports["gids"] = Function::New(env, &userid::Gids);
-  exports["username"] = Function::New(env, &userid::UserName);
-  exports["groupname"] = Function::New(env, &userid::GroupName);
+Object Init(Env env, Object exports) {
+  exports["ids"] = Function::New(env, &Ids);
+  exports["gid"] = Function::New(env, &Gid);
+  exports["gids"] = Function::New(env, &Gids);
+  exports["username"] = Function::New(env, &UserName);
+  exports["groupname"] = Function::New(env, &GroupName);
 
   // Original native module used the "uid" name but the JavaScript renamed it to "ids"
   // This gets replaced in the JavaScript API by a different function
@@ -21,7 +20,4 @@ auto Init(Env env, Object exports) -> Object {
   return exports;
 }
 
-// NOLINTNEXTLINE(modernize-use-trailing-return-type,bugprone-easily-swappable-parameters,cppcoreguidelines-avoid-non-const-global-variables)
 NODE_API_MODULE(NODE_GYP_MODULE_NAME, Init);
-
-// cSpell:ignore NOLINTNEXTLINE

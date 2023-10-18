@@ -8,8 +8,8 @@
 #else
 // Mocks for Windows
 
-using uid_t = uint32_t;
-using gid_t = uint32_t;
+typedef uint32_t uid_t;
+typedef uint32_t gid_t;
 struct passwd {
   char *pw_name;   /* username */
   char *pw_passwd; /* user password */
@@ -26,16 +26,16 @@ struct passwd {
  * the local password file /etc/passwd, NIS, and LDAP) that matches the
  * username name.
  */
-auto getpwnam(const char *name) -> struct passwd *;
+struct passwd *getpwnam(const char *name) {
+  return nullptr;
+}
 #endif
 
-using Napi::CallbackInfo;
-using Napi::Error;
-using Napi::Object;
-using Napi::TypeError;
+using namespace Napi;
+using namespace userid;
 
-auto userid::Ids(const CallbackInfo &info) -> Object {
-  const auto env = info.Env();
+Object userid::Ids(const CallbackInfo &info) {
+  auto env = info.Env();
 
   if (info.Length() < 1) {
     throw TypeError::New(env, "Wrong number of arguments");
@@ -45,10 +45,10 @@ auto userid::Ids(const CallbackInfo &info) -> Object {
     throw TypeError::New(env, "Argument must be a string");
   }
 
-  const auto name = std::string(info[0].As<String>());
-  const auto *const user = getpwnam(name.c_str());
+  auto name = std::string(info[0].As<String>());
+  auto user = getpwnam(name.c_str());
 
-  if (user == nullptr) {
+  if (!user) {
     throw Error::New(env, "username not found");
   }
 

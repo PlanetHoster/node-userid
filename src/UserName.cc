@@ -8,8 +8,8 @@
 #else
 // Mocks for Windows
 
-using uid_t = uint32_t;
-using gid_t = uint32_t;
+typedef uint32_t uid_t;
+typedef uint32_t gid_t;
 struct passwd {
   char *pw_name;   /* username */
   char *pw_passwd; /* user password */
@@ -24,16 +24,16 @@ struct passwd {
  * The getpwuid() function returns a pointer to a structure containing the broken-out fields of the record in the
  * password database that matches the user ID uid.
  */
-auto getpwuid(uid_t uid) -> struct passwd *;
+struct passwd *getpwuid(uid_t uid) {
+  return nullptr;
+}
 #endif
 
-using Napi::CallbackInfo;
-using Napi::Error;
-using Napi::String;
-using Napi::TypeError;
+using namespace Napi;
+using namespace userid;
 
-auto userid::UserName(const CallbackInfo &info) -> String {
-  const auto env = info.Env();
+String userid::UserName(const CallbackInfo &info) {
+  auto env = info.Env();
 
   if (info.Length() < 1) {
     throw TypeError::New(env, "Wrong number of arguments");
@@ -43,10 +43,9 @@ auto userid::UserName(const CallbackInfo &info) -> String {
     throw TypeError::New(env, "Argument must be a number");
   }
 
-  const auto n = info[0].As<Number>().Int32Value();
-  const auto *const user = getpwuid(n);
+  auto user = getpwuid(info[0].As<Number>().Int32Value());
 
-  if (user == nullptr) {
+  if (!user) {
     throw Error::New(env, "uid not found");
   }
 

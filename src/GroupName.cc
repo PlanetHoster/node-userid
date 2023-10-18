@@ -8,7 +8,7 @@
 #else
 // Mocks for Windows
 
-using gid_t = uint32_t;
+typedef uint32_t gid_t;
 struct group {
   /**
    * group name
@@ -31,16 +31,16 @@ struct group {
 /**
  * The getgrgid() function shall search the group database for an entry with a matching gid.
  */
-auto getgrgid(gid_t gid) -> struct group *;
+struct group *getgrgid(gid_t gid) {
+  return nullptr;
+}
 #endif
 
-using Napi::CallbackInfo;
-using Napi::Error;
-using Napi::String;
-using Napi::TypeError;
+using namespace Napi;
+using namespace userid;
 
-auto userid::GroupName(const CallbackInfo &info) -> String {
-  const auto env = info.Env();
+String userid::GroupName(const CallbackInfo &info) {
+  auto env = info.Env();
 
   if (info.Length() < 1) {
     throw TypeError::New(env, "Wrong number of arguments");
@@ -50,11 +50,11 @@ auto userid::GroupName(const CallbackInfo &info) -> String {
     throw TypeError::New(env, "Argument must be a number");
   }
 
-  const int gid = info[0].As<Number>().Int32Value();
+  int gid = info[0].As<Number>().Int32Value();
 
-  const auto *const group = getgrgid(gid);
+  auto group = getgrgid(gid);
 
-  if (group == nullptr) {
+  if (!group) {
     throw Error::New(env, "gid not found");
   }
 

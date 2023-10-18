@@ -15,8 +15,8 @@
 #else
 // Mocks for Windows
 
-using uid_t = uint32_t;
-using gid_t = uint32_t;
+typedef uint32_t uid_t;
+typedef uint32_t gid_t;
 struct passwd {
   char *pw_name;   /* username */
   char *pw_passwd; /* user password */
@@ -33,7 +33,7 @@ struct passwd {
  * the local password file /etc/passwd, NIS, and LDAP) that matches the
  * username name.
  */
-auto getpwnam(const char *name) -> struct passwd *;
+struct passwd *getpwnam(const char *name);
 
 /**
  * The getgrouplist() function scans the group database (see group(5))
@@ -57,17 +57,13 @@ auto getpwnam(const char *name) -> struct passwd *;
  * *ngroups can be used to resize the buffer passed to a further call
  * getgrouplist().
  */
-auto getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups) -> int;
+int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups) { return -2; }
 #endif
 
-using Napi::Array;
-using Napi::CallbackInfo;
-using Napi::Error;
-using Napi::Number;
-using Napi::TypeError;
+using namespace Napi;
 
-auto userid::Gids(const CallbackInfo &info) -> Array {
-  const auto env = info.Env();
+Array userid::Gids(const CallbackInfo &info) {
+  auto env = info.Env();
 
   if (info.Length() < 1) {
     throw TypeError::New(env, "Wrong number of arguments");
@@ -77,20 +73,20 @@ auto userid::Gids(const CallbackInfo &info) -> Array {
     throw TypeError::New(env, "Argument must be a string");
   }
 
-  const auto username = std::string(info[0].As<String>());
+  auto username = std::string(info[0].As<String>());
 
   errno = 0;
-  const auto *const pw = getpwnam(username.c_str());
+  auto pw = getpwnam(username.c_str());
 
-  if (pw == nullptr) {
-    // TODO(Cameron): More verbose error message that includes errno
+  if (!pw) {
+    // TODO: More verbose error message that includes errno
     throw Error::New(env, "getpwnam");
   }
 
 #ifdef __APPLE__
   typedef int gidType;
 #else  // ifdef __APPLE__
-  using gidType = gid_t;
+  typedef gid_t gidType;
 #endif // ifdef __APPLE__
 
   gidType *groups = nullptr;
@@ -102,12 +98,12 @@ auto userid::Gids(const CallbackInfo &info) -> Array {
     // It is safe to delete nullptr on first run
     delete[] groups;
 
-    // Make our list of groups bigger by 2x at a time
+    // Make our list of groups bigger by 4 at a time
     ngroups *= 2;
 
     groups = new gidType[ngroups];
 
-    if (groups == nullptr) {
+    if (!groups) {
       throw Error::New(env, "Malloc error generating list of groups");
     }
 
@@ -120,8 +116,8 @@ auto userid::Gids(const CallbackInfo &info) -> Array {
   auto ret = Array::New(env, foundGroups);
 
   for (int i = 0; i < ngroups; i++) {
-    // TODO(Cameron): Is this safe?
-    ret[i] = Number::New(env, groups[i]);
+    // TODO: What happens when `napi_value`s are assigned to an array? Do their allocations need to stay around?
+    ret[uint32_t(i)] = Number::New(env, groups[i]);
   }
 
   delete[] groups;
